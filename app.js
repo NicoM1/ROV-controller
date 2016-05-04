@@ -3,21 +3,51 @@ var App = function() {
 	var _g = this;
 	this.webcamOutput = window.document.getElementById("webcamOutput");
 	this.axesReadout = window.document.getElementById("axesReadout");
+	this.portSelect = window.document.getElementById("portSelect");
+	this.comPort = "null";
+	this.connectionId = null;
+	this.connect = function(port) {
+		chrome.serial.connect(port, function(e) {
+			console.log(e);
+			_g.connectionId = e.connectionId;
+			chrome.serial.onReceive.addListener(function(info) {
+				console.log(info);
+			});
+		});
+	};
 	window.navigator.webkitGetUserMedia({ video : true},$bind(this,this.handleVideo),$bind(this,this.videoError));
 	window.addEventListener("gamepadconnected",function(e) {
 		haxe_Log.trace("gamepad connected.",{ fileName : "App.hx", lineNumber : 20, className : "App", methodName : "new", customParams : [e.gamepad.id,e.gamepad.index]});
 		_g.gamepad = e.gamepad;
 	});
+	chrome.serial.getDevices(function(e) {
+		console.log(e);
+		for(var i = 0; i < e.length; i++) {
+			_g.portSelect[i].innerHTML = e[i].path;
+		}
+		_g.portSelect.onchange = function() {
+			_g.comPort = _g.portSelect[_g.portSelect.selectedIndex].innerHTML;
+			console.log(_g.comPort);
+			_g.connect(_g.comPort);
+		};
+		_g.comPort = _g.portSelect[_g.portSelect.selectedIndex].innerHTML;
+		_g.connect(_g.comPort);
+	});
 	var gamepadLoop = new haxe_Timer(100);
 	gamepadLoop.run = function() {
 		if(_g.gamepad == null) return;
 		var currentGamepad = window.navigator.getGamepads()[_g.gamepad.index];
-		haxe_Log.trace(currentGamepad.axes[0],{ fileName : "App.hx", lineNumber : 28, className : "App", methodName : "new", customParams : [currentGamepad.axes[1]]});
 		var x = Math.round(currentGamepad.axes[0] * 100) / 100;
 		var y = Math.round(currentGamepad.axes[1] * 100) / 100;
-		if(Math.abs(x) < 0.35) x = 0;
-		if(Math.abs(y) < 0.35) y = 0;
-		_g.axesReadout.innerHTML = "" + x + ", " + y;
+		if(Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2)) < 0.35) {
+			x = 0;
+			y = 0;	
+		}
+		//_g.axesReadout.innerHTML = "" + x + ", " + y;
+		var left = 100 + x*100;
+		var top = 100 + y*100;
+		_g.axesReadout.style.left = left + "px";
+		_g.axesReadout.style.top = top + "px";
 	};
 };
 App.__name__ = true;
@@ -26,6 +56,7 @@ App.main = function() {
 		new App();
 	};
 };
+
 App.prototype = {
 	handleVideo: function(stream) {
 		this.webcamOutput.src = URL.createObjectURL(stream);

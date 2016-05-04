@@ -8,5 +8,5 @@
       		"scripts": ["background.js"]
     	}
   	},
-	"permissions": ["videoCapture", "audioCapture"]
+	"permissions": ["videoCapture", "audioCapture", "serial"]
 }
