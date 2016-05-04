@@ -1,0 +1,12 @@
+{
+	"name": "ROV Controller",
+	"description": "ROV control panel.",
+	"version": "1.0.0",
+	"manifest_version": 2,
+	"app": {
+    	"background": {
+      		"scripts": ["background.js"]
+    	}
+  	},
+	"permissions": ["videoCapture", "audioCapture"]
+}
