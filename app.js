@@ -1,37 +1,31 @@
 (function (console) { "use strict";
 var App = function() {
+	this.connectionId = -1;
+	this.comPort = null;
 	var _g = this;
 	this.webcamOutput = window.document.getElementById("webcamOutput");
 	this.axesReadout = window.document.getElementById("axesReadout");
 	this.portSelect = window.document.getElementById("portSelect");
-	this.comPort = "null";
-	this.connectionId = null;
-	this.connect = function(port) {
-		chrome.serial.connect(port, function(e) {
-			console.log(e);
-			_g.connectionId = e.connectionId;
-			chrome.serial.onReceive.addListener(function(info) {
-				console.log(info);
-			});
-		});
-	};
 	window.navigator.webkitGetUserMedia({ video : true},$bind(this,this.handleVideo),$bind(this,this.videoError));
 	window.addEventListener("gamepadconnected",function(e) {
-		haxe_Log.trace("gamepad connected.",{ fileName : "App.hx", lineNumber : 20, className : "App", methodName : "new", customParams : [e.gamepad.id,e.gamepad.index]});
+		haxe_Log.trace("gamepad connected.",{ fileName : "App.hx", lineNumber : 28, className : "App", methodName : "new", customParams : [e.gamepad.id,e.gamepad.index]});
 		_g.gamepad = e.gamepad;
 	});
-	chrome.serial.getDevices(function(e) {
-		console.log(e);
-		for(var i = 0; i < e.length; i++) {
-			_g.portSelect[i].innerHTML = e[i].path;
+	chrome.serial.getDevices(function(e1) {
+		var _g1 = 0;
+		var _g2 = e1.length;
+		while(_g1 < _g2) {
+			var i = _g1++;
+			var option;
+			var _this = window.document;
+			option = _this.createElement("option");
+			option.innerHTML = e1[i].path;
+			_g.portSelect.appendChild(option);
 		}
 		_g.portSelect.onchange = function() {
-			_g.comPort = _g.portSelect[_g.portSelect.selectedIndex].innerHTML;
-			console.log(_g.comPort);
-			_g.connect(_g.comPort);
+			_g.connect(_g.portSelect.children[_g.portSelect.selectedIndex].innerHTML);
 		};
-		_g.comPort = _g.portSelect[_g.portSelect.selectedIndex].innerHTML;
-		_g.connect(_g.comPort);
+		_g.connect(_g.portSelect.children[_g.portSelect.selectedIndex].innerHTML);
 	});
 	var gamepadLoop = new haxe_Timer(100);
 	gamepadLoop.run = function() {
@@ -39,13 +33,12 @@ var App = function() {
 		var currentGamepad = window.navigator.getGamepads()[_g.gamepad.index];
 		var x = Math.round(currentGamepad.axes[0] * 100) / 100;
 		var y = Math.round(currentGamepad.axes[1] * 100) / 100;
-		if(Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2)) < 0.35) {
+		if(Math.sqrt(Math.pow(x,2) + Math.pow(y,2)) < 0.35) {
 			x = 0;
-			y = 0;	
+			y = 0;
 		}
-		//_g.axesReadout.innerHTML = "" + x + ", " + y;
-		var left = 100 + x*100;
-		var top = 100 + y*100;
+		var left = 100 + x * 30;
+		var top = 100 + y * 30;
 		_g.axesReadout.style.left = left + "px";
 		_g.axesReadout.style.top = top + "px";
 	};
@@ -56,16 +49,55 @@ App.main = function() {
 		new App();
 	};
 };
-
 App.prototype = {
-	handleVideo: function(stream) {
+	connect: function(port) {
+		var _g = this;
+		if(this.connectionId != -1) chrome.serial.disconnect(this.connectionId,function(e) {
+			haxe_Log.trace("disconnected: " + (e == null?"null":"" + e),{ fileName : "App.hx", lineNumber : 65, className : "App", methodName : "connect"});
+		});
+		this.comPort = port;
+		chrome.serial.connect(port,null,function(info) {
+			_g.connectionId = info.connectionId;
+			_g.send("test");
+		});
+		chrome.serial.onReceive.addListener(function(info1) {
+			if(_g.connectionId != info1.connectionId) return;
+			haxe_Log.trace("serial data: " + Std.string(info1.data),{ fileName : "App.hx", lineNumber : 75, className : "App", methodName : "connect"});
+		});
+	}
+	,send: function(msg) {
+		var byteArray = [];
+		var _g1 = 0;
+		var _g = msg.length;
+		while(_g1 < _g) {
+			var i = _g1++;
+			byteArray.push(HxOverrides.cca(msg,i));
+		}
+		var dataBuffer = new Uint8Array(byteArray);
+		chrome.serial.send(this.connectionId,dataBuffer.buffer,function(e) {
+			haxe_Log.trace("sent: " + Std.string(dataBuffer),{ fileName : "App.hx", lineNumber : 86, className : "App", methodName : "send", customParams : [e]});
+		});
+	}
+	,handleVideo: function(stream) {
 		this.webcamOutput.src = URL.createObjectURL(stream);
 	}
 	,videoError: function(e) {
-		haxe_Log.trace(e,{ fileName : "App.hx", lineNumber : 43, className : "App", methodName : "videoError"});
+		haxe_Log.trace(e,{ fileName : "App.hx", lineNumber : 95, className : "App", methodName : "videoError"});
 	}
 };
+var HxOverrides = function() { };
+HxOverrides.__name__ = true;
+HxOverrides.cca = function(s,index) {
+	var x = s.charCodeAt(index);
+	if(x != x) return undefined;
+	return x;
+};
 Math.__name__ = true;
+var Std = function() { };
+Std.__name__ = true;
+Std.string = function(s) {
+	return js_Boot.__string_rec(s,"");
+};
 var haxe_Log = function() { };
 haxe_Log.__name__ = true;
 haxe_Log.trace = function(v,infos) {
