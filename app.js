@@ -5,10 +5,11 @@ var App = function() {
 	var _g = this;
 	this.webcamOutput = window.document.getElementById("webcamOutput");
 	this.axesReadout = window.document.getElementById("axesReadout");
+	this.rightAxesReadout = window.document.getElementById("rightAxesReadout");
 	this.portSelect = window.document.getElementById("portSelect");
 	window.navigator.webkitGetUserMedia({ video : true},$bind(this,this.handleVideo),$bind(this,this.videoError));
 	window.addEventListener("gamepadconnected",function(e) {
-		haxe_Log.trace("gamepad connected.",{ fileName : "App.hx", lineNumber : 28, className : "App", methodName : "new", customParams : [e.gamepad.id,e.gamepad.index]});
+		haxe_Log.trace("gamepad connected.",{ fileName : "App.hx", lineNumber : 30, className : "App", methodName : "new", customParams : [e.gamepad.id,e.gamepad.index]});
 		_g.gamepad = e.gamepad;
 	});
 	chrome.serial.getDevices(function(e1) {
@@ -37,10 +38,22 @@ var App = function() {
 			x = 0;
 			y = 0;
 		}
+		if(currentGamepad.buttons[0].pressed) _g.axesReadout.style.backgroundColor = "#aaaaaa"; else _g.axesReadout.style.backgroundColor = null;
+		if(currentGamepad.buttons[1].pressed) _g.rightAxesReadout.style.backgroundColor = "#aaaaaa"; else _g.rightAxesReadout.style.backgroundColor = null;
 		var left = 100 + x * 30;
 		var top = 100 + y * 30;
 		_g.axesReadout.style.left = left + "px";
 		_g.axesReadout.style.top = top + "px";
+		x = Math.round(currentGamepad.axes[2] * 100) / 100;
+		y = Math.round(currentGamepad.axes[3] * 100) / 100;
+		if(Math.sqrt(Math.pow(x,2) + Math.pow(y,2)) < 0.35) {
+			x = 0;
+			y = 0;
+		}
+		var right = 100 - x * 30;
+		var top1 = 100 + y * 30;
+		_g.rightAxesReadout.style.right = right + "px";
+		_g.rightAxesReadout.style.top = top1 + "px";
 	};
 };
 App.__name__ = true;
@@ -53,7 +66,7 @@ App.prototype = {
 	connect: function(port) {
 		var _g = this;
 		if(this.connectionId != -1) chrome.serial.disconnect(this.connectionId,function(e) {
-			haxe_Log.trace("disconnected: " + (e == null?"null":"" + e),{ fileName : "App.hx", lineNumber : 65, className : "App", methodName : "connect"});
+			haxe_Log.trace("disconnected: " + (e == null?"null":"" + e),{ fileName : "App.hx", lineNumber : 93, className : "App", methodName : "connect"});
 		});
 		this.comPort = port;
 		chrome.serial.connect(port,null,function(info) {
@@ -62,7 +75,7 @@ App.prototype = {
 		});
 		chrome.serial.onReceive.addListener(function(info1) {
 			if(_g.connectionId != info1.connectionId) return;
-			haxe_Log.trace("serial data: " + Std.string(info1.data),{ fileName : "App.hx", lineNumber : 75, className : "App", methodName : "connect"});
+			haxe_Log.trace("serial data: " + Std.string(info1.data),{ fileName : "App.hx", lineNumber : 103, className : "App", methodName : "connect"});
 		});
 	}
 	,send: function(msg) {
@@ -75,14 +88,14 @@ App.prototype = {
 		}
 		var dataBuffer = new Uint8Array(byteArray);
 		chrome.serial.send(this.connectionId,dataBuffer.buffer,function(e) {
-			haxe_Log.trace("sent: " + Std.string(dataBuffer),{ fileName : "App.hx", lineNumber : 86, className : "App", methodName : "send", customParams : [e]});
+			haxe_Log.trace("sent: " + Std.string(dataBuffer),{ fileName : "App.hx", lineNumber : 114, className : "App", methodName : "send", customParams : [e]});
 		});
 	}
 	,handleVideo: function(stream) {
 		this.webcamOutput.src = URL.createObjectURL(stream);
 	}
 	,videoError: function(e) {
-		haxe_Log.trace(e,{ fileName : "App.hx", lineNumber : 95, className : "App", methodName : "videoError"});
+		haxe_Log.trace(e,{ fileName : "App.hx", lineNumber : 123, className : "App", methodName : "videoError"});
 	}
 };
 var HxOverrides = function() { };

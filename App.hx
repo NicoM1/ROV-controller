@@ -12,6 +12,7 @@ class App {
 
 	var webcamOutput: VideoElement;
 	var axesReadout: DivElement;
+	var rightAxesReadout: DivElement;
 	var portSelect: SelectElement;
 	var gamepad: Dynamic;
 
@@ -21,6 +22,7 @@ class App {
 	public function new() {
 		webcamOutput = cast Browser.document.getElementById('webcamOutput');
 		axesReadout = cast Browser.document.getElementById('axesReadout');
+		rightAxesReadout = cast Browser.document.getElementById('rightAxesReadout');
 		portSelect = cast Browser.document.getElementById('portSelect');
 		untyped Browser.navigator.webkitGetUserMedia({video: true}, handleVideo, videoError);
 
@@ -52,10 +54,36 @@ class App {
 				y = 0;
 			}
 
+			if(currentGamepad.buttons[0].pressed) {
+				axesReadout.style.backgroundColor = "#aaaaaa";
+			}
+			else {
+				axesReadout.style.backgroundColor = null;
+			}
+
+			if(currentGamepad.buttons[1].pressed) {
+				rightAxesReadout.style.backgroundColor = "#aaaaaa";
+			}
+			else {
+				rightAxesReadout.style.backgroundColor = null;
+			}
+
 			var left: Float = 100 + x*30;
 			var top: Float = 100 + y*30;
 			axesReadout.style.left = left + 'px';
 			axesReadout.style.top = top + 'px';
+
+			x = Math.round(currentGamepad.axes[2] * 100)/100;
+			y = Math.round(currentGamepad.axes[3] * 100)/100;
+			if(Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2)) < 0.35) {
+				x = 0;
+				y = 0;
+			}
+
+			var right: Float = 100 - x*30;
+			var top: Float = 100 + y*30;
+			rightAxesReadout.style.right = right + 'px';
+			rightAxesReadout.style.top = top + 'px';
 		}
 	}
 

@@ -24,15 +24,21 @@
 				border: #151515 solid 4px;
 				border-radius: 7px;
 			}
-			#axesReadout {
+			.axe {
 				width: 60px;
 				height: 60px;
-				left: 100px;
-				top: 100px;
 				background-color: #333333;
 				border-radius: 100px;
 				position: absolute;
 				border: #212121 solid 7px;
+			}
+			#axesReadout {
+				left: 100px;
+				top: 100px;
+			}
+			#rightAxesReadout {
+				right: 100px;
+				top: 100px;
 			}
 			select {
 				background-color: #333333;
@@ -48,7 +54,9 @@
 		</style>
     </head>
     <body>
-		<div id="axesReadout">
+		<div class="axe" id="axesReadout">
+		</div>
+		<div class="axe" id="rightAxesReadout">
 		</div>
         <select id="portSelect">
 		</select>
