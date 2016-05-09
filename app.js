@@ -28,6 +28,19 @@ var App = function() {
 		};
 		_g.connect(_g.portSelect.children[_g.portSelect.selectedIndex].innerHTML);
 	});
+	chrome.serial.onReceive.addListener(function(e2) {
+		if(e2.connectionId != _g.connectionId) return;
+		haxe_Log.trace("recieved data: ",{ fileName : "App.hx", lineNumber : 48, className : "App", methodName : "new"});
+		var data = new Uint8Array(e2.data);
+		var $final = "";
+		var _g11 = 0;
+		while(_g11 < data.length) {
+			var i1 = data[_g11];
+			++_g11;
+			$final += String.fromCharCode(i1);
+		}
+		haxe_Log.trace($final,{ fileName : "App.hx", lineNumber : 54, className : "App", methodName : "new"});
+	});
 	var gamepadLoop = new haxe_Timer(100);
 	gamepadLoop.run = function() {
 		if(_g.gamepad == null) return;
@@ -38,6 +51,7 @@ var App = function() {
 			x = 0;
 			y = 0;
 		}
+		if(x != 0) _g.send("1"); else _g.send("0");
 		if(currentGamepad.buttons[0].pressed) _g.axesReadout.style.backgroundColor = "#aaaaaa"; else _g.axesReadout.style.backgroundColor = null;
 		if(currentGamepad.buttons[1].pressed) _g.rightAxesReadout.style.backgroundColor = "#aaaaaa"; else _g.rightAxesReadout.style.backgroundColor = null;
 		var left = 100 + x * 30;
@@ -66,20 +80,18 @@ App.prototype = {
 	connect: function(port) {
 		var _g = this;
 		if(this.connectionId != -1) chrome.serial.disconnect(this.connectionId,function(e) {
-			haxe_Log.trace("disconnected: " + (e == null?"null":"" + e),{ fileName : "App.hx", lineNumber : 93, className : "App", methodName : "connect"});
+			haxe_Log.trace("disconnected: " + (e == null?"null":"" + e),{ fileName : "App.hx", lineNumber : 111, className : "App", methodName : "connect"});
 		});
 		this.comPort = port;
 		chrome.serial.connect(port,null,function(info) {
 			_g.connectionId = info.connectionId;
 			_g.send("test");
 		});
-		chrome.serial.onReceive.addListener(function(info1) {
-			if(_g.connectionId != info1.connectionId) return;
-			haxe_Log.trace("serial data: " + Std.string(info1.data),{ fileName : "App.hx", lineNumber : 103, className : "App", methodName : "connect"});
-		});
 	}
 	,send: function(msg) {
+		if(this.connectionId == -1) return;
 		var byteArray = [];
+		byteArray.push(0);
 		var _g1 = 0;
 		var _g = msg.length;
 		while(_g1 < _g) {
@@ -88,14 +100,15 @@ App.prototype = {
 		}
 		var dataBuffer = new Uint8Array(byteArray);
 		chrome.serial.send(this.connectionId,dataBuffer.buffer,function(e) {
-			haxe_Log.trace("sent: " + Std.string(dataBuffer),{ fileName : "App.hx", lineNumber : 114, className : "App", methodName : "send", customParams : [e]});
+		});
+		chrome.serial.flush(this.connectionId,function(e1) {
 		});
 	}
 	,handleVideo: function(stream) {
 		this.webcamOutput.src = URL.createObjectURL(stream);
 	}
 	,videoError: function(e) {
-		haxe_Log.trace(e,{ fileName : "App.hx", lineNumber : 123, className : "App", methodName : "videoError"});
+		haxe_Log.trace(e,{ fileName : "App.hx", lineNumber : 142, className : "App", methodName : "videoError"});
 	}
 };
 var HxOverrides = function() { };
@@ -106,11 +119,6 @@ HxOverrides.cca = function(s,index) {
 	return x;
 };
 Math.__name__ = true;
-var Std = function() { };
-Std.__name__ = true;
-Std.string = function(s) {
-	return js_Boot.__string_rec(s,"");
-};
 var haxe_Log = function() { };
 haxe_Log.__name__ = true;
 haxe_Log.trace = function(v,infos) {

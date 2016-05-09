@@ -43,6 +43,17 @@ class App {
 			connect(portSelect.children[portSelect.selectedIndex].innerHTML);
 		});
 
+		Serial.onReceive.addListener(function(e) {
+			if(e.connectionId != connectionId) return;
+			trace('recieved data: ');
+			var data = new Uint8Array(e.data);
+			var final: String = '';
+			for(i in data) {
+				final += String.fromCharCode(i);
+			}
+			trace(final);
+		});
+
 		var gamepadLoop: Timer = new Timer(100);
 		gamepadLoop.run = function() {
 			if(gamepad == null) return;
@@ -52,6 +63,13 @@ class App {
 			if(Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2)) < 0.35) {
 				x = 0;
 				y = 0;
+			}
+
+			if(x != 0) {
+				send('1');
+			}
+			else {
+				send('0');
 			}
 
 			if(currentGamepad.buttons[0].pressed) {
@@ -98,20 +116,21 @@ class App {
 			connectionId = info.connectionId;
 			send('test');
 		});
-		Serial.onReceive.addListener(function(info) {
-			if(connectionId != info.connectionId) return;
-			trace('serial data: ' + info.data);
-		});
 	}
 
 	function send(msg: String) {
+		if(connectionId == -1) return;
 		var byteArray: Array<Int> = [];
+		byteArray.push(0);
 		for(i in 0...msg.length) {
 			byteArray.push(msg.charCodeAt(i));
 		}
 		var dataBuffer: Uint8Array = new Uint8Array(byteArray);
 		Serial.send(connectionId, dataBuffer.buffer, function(e) {
-			trace('sent: ' + dataBuffer, e);
+			//trace('sent: ' + dataBuffer, e);
+		});
+		Serial.flush(connectionId, function(e) {
+			//trace('data flushed: ' + e);
 		});
 	}
 
