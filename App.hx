@@ -14,20 +14,25 @@ class App {
 	var axesReadout: DivElement;
 	var rightAxesReadout: DivElement;
 	var portSelect: SelectElement;
+	var outputDiv: DivElement;
 	var gamepad: Dynamic;
 
 	var comPort: String = null;
 	var connectionId: Int = -1;
+
+	var currentData: String = '';
 
 	public function new() {
 		webcamOutput = cast Browser.document.getElementById('webcamOutput');
 		axesReadout = cast Browser.document.getElementById('axesReadout');
 		rightAxesReadout = cast Browser.document.getElementById('rightAxesReadout');
 		portSelect = cast Browser.document.getElementById('portSelect');
+		outputDiv = cast Browser.document.getElementById('readout');
+
 		untyped Browser.navigator.webkitGetUserMedia({video: true}, handleVideo, videoError);
 
 		Browser.window.addEventListener('gamepadconnected', function (e) {
-			trace('gamepad connected.', e.gamepad.id, e.gamepad.index);
+			output('gamepad connected: ' + e.gamepad.id);
 			gamepad = e.gamepad;
 		});
 
@@ -45,13 +50,21 @@ class App {
 
 		Serial.onReceive.addListener(function(e) {
 			if(e.connectionId != connectionId) return;
-			trace('recieved data: ');
 			var data = new Uint8Array(e.data);
 			var final: String = '';
 			for(i in data) {
 				final += String.fromCharCode(i);
+				output(Std.string(i));
 			}
-			trace(final);
+			//while
+			if(final.indexOf('|') != -1) {
+				currentData += final.substring(0, final.indexOf('|'));
+				output('data recieved: ' + currentData);
+				currentData = final.substr(final.indexOf('|') + 1);
+			}
+			else {
+				currentData += final;
+			}
 		});
 
 		var gamepadLoop: Timer = new Timer(100);
@@ -105,6 +118,10 @@ class App {
 		}
 	}
 
+	function output(msg: String) {
+		outputDiv.innerHTML = msg + '\n' + outputDiv.innerHTML;
+	}
+
 	function connect(port: String) {
 		if(connectionId != -1) {
 			Serial.disconnect(connectionId, function(e) {
@@ -125,9 +142,10 @@ class App {
 		for(i in 0...msg.length) {
 			byteArray.push(msg.charCodeAt(i));
 		}
+		byteArray.push('|'.charCodeAt(0));
 		var dataBuffer: Uint8Array = new Uint8Array(byteArray);
 		Serial.send(connectionId, dataBuffer.buffer, function(e) {
-			//trace('sent: ' + dataBuffer, e);
+			//output('sent: ' + dataBuffer);
 		});
 		Serial.flush(connectionId, function(e) {
 			//trace('data flushed: ' + e);

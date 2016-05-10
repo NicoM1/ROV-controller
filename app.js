@@ -1,5 +1,6 @@
 (function (console) { "use strict";
 var App = function() {
+	this.currentData = "";
 	this.connectionId = -1;
 	this.comPort = null;
 	var _g = this;
@@ -7,9 +8,10 @@ var App = function() {
 	this.axesReadout = window.document.getElementById("axesReadout");
 	this.rightAxesReadout = window.document.getElementById("rightAxesReadout");
 	this.portSelect = window.document.getElementById("portSelect");
+	this.outputDiv = window.document.getElementById("readout");
 	window.navigator.webkitGetUserMedia({ video : true},$bind(this,this.handleVideo),$bind(this,this.videoError));
 	window.addEventListener("gamepadconnected",function(e) {
-		haxe_Log.trace("gamepad connected.",{ fileName : "App.hx", lineNumber : 30, className : "App", methodName : "new", customParams : [e.gamepad.id,e.gamepad.index]});
+		_g.output("gamepad connected: " + e.gamepad.id);
 		_g.gamepad = e.gamepad;
 	});
 	chrome.serial.getDevices(function(e1) {
@@ -30,7 +32,6 @@ var App = function() {
 	});
 	chrome.serial.onReceive.addListener(function(e2) {
 		if(e2.connectionId != _g.connectionId) return;
-		haxe_Log.trace("recieved data: ",{ fileName : "App.hx", lineNumber : 48, className : "App", methodName : "new"});
 		var data = new Uint8Array(e2.data);
 		var $final = "";
 		var _g11 = 0;
@@ -38,8 +39,14 @@ var App = function() {
 			var i1 = data[_g11];
 			++_g11;
 			$final += String.fromCharCode(i1);
+			_g.output(i1 == null?"null":"" + i1);
 		}
-		haxe_Log.trace($final,{ fileName : "App.hx", lineNumber : 54, className : "App", methodName : "new"});
+		if($final.indexOf("|") != -1) {
+			_g.currentData += $final.substring(0,$final.indexOf("|"));
+			_g.output("data recieved: " + _g.currentData);
+			var pos = $final.indexOf("|") + 1;
+			_g.currentData = HxOverrides.substr($final,pos,null);
+		} else _g.currentData += $final;
 	});
 	var gamepadLoop = new haxe_Timer(100);
 	gamepadLoop.run = function() {
@@ -70,17 +77,19 @@ var App = function() {
 		_g.rightAxesReadout.style.top = top1 + "px";
 	};
 };
-App.__name__ = true;
 App.main = function() {
 	window.onload = function() {
 		new App();
 	};
 };
 App.prototype = {
-	connect: function(port) {
+	output: function(msg) {
+		this.outputDiv.innerHTML = msg + "\n" + this.outputDiv.innerHTML;
+	}
+	,connect: function(port) {
 		var _g = this;
 		if(this.connectionId != -1) chrome.serial.disconnect(this.connectionId,function(e) {
-			haxe_Log.trace("disconnected: " + (e == null?"null":"" + e),{ fileName : "App.hx", lineNumber : 111, className : "App", methodName : "connect"});
+			console.log("disconnected: " + (e == null?"null":"" + e));
 		});
 		this.comPort = port;
 		chrome.serial.connect(port,null,function(info) {
@@ -98,6 +107,7 @@ App.prototype = {
 			var i = _g1++;
 			byteArray.push(HxOverrides.cca(msg,i));
 		}
+		byteArray.push(HxOverrides.cca("|",0));
 		var dataBuffer = new Uint8Array(byteArray);
 		chrome.serial.send(this.connectionId,dataBuffer.buffer,function(e) {
 		});
@@ -108,21 +118,23 @@ App.prototype = {
 		this.webcamOutput.src = URL.createObjectURL(stream);
 	}
 	,videoError: function(e) {
-		haxe_Log.trace(e,{ fileName : "App.hx", lineNumber : 142, className : "App", methodName : "videoError"});
+		console.log(e);
 	}
 };
 var HxOverrides = function() { };
-HxOverrides.__name__ = true;
 HxOverrides.cca = function(s,index) {
 	var x = s.charCodeAt(index);
 	if(x != x) return undefined;
 	return x;
 };
-Math.__name__ = true;
-var haxe_Log = function() { };
-haxe_Log.__name__ = true;
-haxe_Log.trace = function(v,infos) {
-	js_Boot.__trace(v,infos);
+HxOverrides.substr = function(s,pos,len) {
+	if(pos != null && pos != 0 && len != null && len < 0) return "";
+	if(len == null) len = s.length;
+	if(pos < 0) {
+		pos = s.length + pos;
+		if(pos < 0) pos = 0;
+	} else if(len < 0) len = s.length + len - pos;
+	return s.substr(pos,len);
 };
 var haxe_Timer = function(time_ms) {
 	var me = this;
@@ -130,102 +142,11 @@ var haxe_Timer = function(time_ms) {
 		me.run();
 	},time_ms);
 };
-haxe_Timer.__name__ = true;
 haxe_Timer.prototype = {
 	run: function() {
 	}
 };
-var js_Boot = function() { };
-js_Boot.__name__ = true;
-js_Boot.__unhtml = function(s) {
-	return s.split("&").join("&amp;").split("<").join("&lt;").split(">").join("&gt;");
-};
-js_Boot.__trace = function(v,i) {
-	var msg;
-	if(i != null) msg = i.fileName + ":" + i.lineNumber + ": "; else msg = "";
-	msg += js_Boot.__string_rec(v,"");
-	if(i != null && i.customParams != null) {
-		var _g = 0;
-		var _g1 = i.customParams;
-		while(_g < _g1.length) {
-			var v1 = _g1[_g];
-			++_g;
-			msg += "," + js_Boot.__string_rec(v1,"");
-		}
-	}
-	var d;
-	if(typeof(document) != "undefined" && (d = document.getElementById("haxe:trace")) != null) d.innerHTML += js_Boot.__unhtml(msg) + "<br/>"; else if(typeof console != "undefined" && console.log != null) console.log(msg);
-};
-js_Boot.__string_rec = function(o,s) {
-	if(o == null) return "null";
-	if(s.length >= 5) return "<...>";
-	var t = typeof(o);
-	if(t == "function" && (o.__name__ || o.__ename__)) t = "object";
-	switch(t) {
-	case "object":
-		if(o instanceof Array) {
-			if(o.__enum__) {
-				if(o.length == 2) return o[0];
-				var str2 = o[0] + "(";
-				s += "\t";
-				var _g1 = 2;
-				var _g = o.length;
-				while(_g1 < _g) {
-					var i1 = _g1++;
-					if(i1 != 2) str2 += "," + js_Boot.__string_rec(o[i1],s); else str2 += js_Boot.__string_rec(o[i1],s);
-				}
-				return str2 + ")";
-			}
-			var l = o.length;
-			var i;
-			var str1 = "[";
-			s += "\t";
-			var _g2 = 0;
-			while(_g2 < l) {
-				var i2 = _g2++;
-				str1 += (i2 > 0?",":"") + js_Boot.__string_rec(o[i2],s);
-			}
-			str1 += "]";
-			return str1;
-		}
-		var tostr;
-		try {
-			tostr = o.toString;
-		} catch( e ) {
-			return "???";
-		}
-		if(tostr != null && tostr != Object.toString && typeof(tostr) == "function") {
-			var s2 = o.toString();
-			if(s2 != "[object Object]") return s2;
-		}
-		var k = null;
-		var str = "{\n";
-		s += "\t";
-		var hasp = o.hasOwnProperty != null;
-		for( var k in o ) {
-		if(hasp && !o.hasOwnProperty(k)) {
-			continue;
-		}
-		if(k == "prototype" || k == "__class__" || k == "__super__" || k == "__interfaces__" || k == "__properties__") {
-			continue;
-		}
-		if(str.length != 2) str += ", \n";
-		str += s + k + " : " + js_Boot.__string_rec(o[k],s);
-		}
-		s = s.substring(1);
-		str += "\n" + s + "}";
-		return str;
-	case "function":
-		return "<function>";
-	case "string":
-		return o;
-	default:
-		return String(o);
-	}
-};
 var $_, $fid = 0;
 function $bind(o,m) { if( m == null ) return null; if( m.__id__ == null ) m.__id__ = $fid++; var f; if( o.hx__closures__ == null ) o.hx__closures__ = {}; else f = o.hx__closures__[m.__id__]; if( f == null ) { f = function(){ return f.method.apply(f.scope, arguments); }; f.scope = o; f.method = m; o.hx__closures__[m.__id__] = f; } return f; }
-String.__name__ = true;
-Array.__name__ = true;
 App.main();
 })(typeof console != "undefined" ? console : {log:function(){}});

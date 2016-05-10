@@ -51,6 +51,16 @@
 				left: 100;
 				top: 300;
 			}
+            #readout {
+                position: absolute;;
+                bottom: 5px;
+                left: 30%;
+                right: 30%;
+                height: 30%;
+                color: #cccccc;
+                overflow-y: auto;
+                white-space: pre-line;
+            }
 		</style>
     </head>
     <body>
@@ -63,5 +73,7 @@
 		<div id="container">
 			<video autoplay id="webcamOutput"></video>
 		</div>
+        <div id="readout">
+        </div>
 	</body>
 </html>
