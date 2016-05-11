@@ -54,15 +54,16 @@ class App {
 			var final: String = '';
 			for(i in data) {
 				final += String.fromCharCode(i);
-				output(Std.string(i));
+				//output(Std.string(i));
 			}
-			//while
-			if(final.indexOf('|') != -1) {
+
+			while(final.indexOf('|') != -1) {
 				currentData += final.substring(0, final.indexOf('|'));
 				output('data recieved: ' + currentData);
-				currentData = final.substr(final.indexOf('|') + 1);
+				currentData = '';
+				final = final.substr(final.indexOf('|') + 1);
 			}
-			else {
+			if(final.length > 0) {
 				currentData += final;
 			}
 		});
@@ -120,6 +121,9 @@ class App {
 
 	function output(msg: String) {
 		outputDiv.innerHTML = msg + '\n' + outputDiv.innerHTML;
+		if(outputDiv.innerHTML.length > 10000) {
+			outputDiv.innerHTML = outputDiv.innerHTML.substring(0, 10000);
+		}
 	}
 
 	function connect(port: String) {

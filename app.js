@@ -39,14 +39,15 @@ var App = function() {
 			var i1 = data[_g11];
 			++_g11;
 			$final += String.fromCharCode(i1);
-			_g.output(i1 == null?"null":"" + i1);
 		}
-		if($final.indexOf("|") != -1) {
+		while($final.indexOf("|") != -1) {
 			_g.currentData += $final.substring(0,$final.indexOf("|"));
 			_g.output("data recieved: " + _g.currentData);
+			_g.currentData = "";
 			var pos = $final.indexOf("|") + 1;
-			_g.currentData = HxOverrides.substr($final,pos,null);
-		} else _g.currentData += $final;
+			$final = HxOverrides.substr($final,pos,null);
+		}
+		if($final.length > 0) _g.currentData += $final;
 	});
 	var gamepadLoop = new haxe_Timer(100);
 	gamepadLoop.run = function() {
@@ -85,6 +86,7 @@ App.main = function() {
 App.prototype = {
 	output: function(msg) {
 		this.outputDiv.innerHTML = msg + "\n" + this.outputDiv.innerHTML;
+		if(this.outputDiv.innerHTML.length > 10000) this.outputDiv.innerHTML = this.outputDiv.innerHTML.substring(0,10000);
 	}
 	,connect: function(port) {
 		var _g = this;
