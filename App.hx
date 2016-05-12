@@ -14,8 +14,8 @@ class App {
 	var axesReadout: DivElement;
 	var rightAxesReadout: DivElement;
 	var portSelect: SelectElement;
-	var outputDiv: DivElement;
-	var gamepad: Dynamic;
+	static var outputDiv: DivElement;
+	static var gamepad: Dynamic;
 
 	var comPort: String = null;
 	var connectionId: Int = -1;
@@ -29,12 +29,12 @@ class App {
 		portSelect = cast Browser.document.getElementById('portSelect');
 		outputDiv = cast Browser.document.getElementById('readout');
 
-		untyped Browser.navigator.webkitGetUserMedia({video: true}, handleVideo, videoError);
+		for(o in oldMessages) {
+			output(o);
+		}
+		oldMessages = null;
 
-		Browser.window.addEventListener('gamepadconnected', function (e) {
-			output('gamepad connected: ' + e.gamepad.id);
-			gamepad = e.gamepad;
-		});
+		untyped Browser.navigator.webkitGetUserMedia({video: true}, handleVideo, videoError);
 
 		Serial.getDevices(function(e) {
 			for(i in 0...e.length) {
@@ -119,7 +119,13 @@ class App {
 		}
 	}
 
-	function output(msg: String) {
+	static var oldMessages: Array<String> = [];
+
+	static function output(msg: String) {
+		if(outputDiv == null) {
+			oldMessages.push(msg);
+			return;
+		}
 		outputDiv.innerHTML = msg + '\n' + outputDiv.innerHTML;
 		if(outputDiv.innerHTML.length > 10000) {
 			outputDiv.innerHTML = outputDiv.innerHTML.substring(0, 10000);
@@ -142,7 +148,7 @@ class App {
 	function send(msg: String) {
 		if(connectionId == -1) return;
 		var byteArray: Array<Int> = [];
-		byteArray.push(0);
+		//byteArray.push(0);
 		for(i in 0...msg.length) {
 			byteArray.push(msg.charCodeAt(i));
 		}
@@ -165,6 +171,10 @@ class App {
 	}
 
     static function main() {
+		Browser.window.addEventListener('gamepadconnected', function (e) {
+			output('gamepad connected: ' + e.gamepad.id);
+			gamepad = e.gamepad;
+		});
 		Browser.window.onload = function() {
 			new App();
 		}
