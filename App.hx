@@ -29,6 +29,12 @@ class App {
 		portSelect = cast Browser.document.getElementById('portSelect');
 		outputDiv = cast Browser.document.getElementById('readout');
 
+		Browser.window.onunload = function() {
+			Serial.disconnect(connectionId, function(e) {
+				trace('disconnected: ' + connectionId, e);
+			});
+		}
+
 		for(o in oldMessages) {
 			output(o);
 		}
@@ -49,6 +55,7 @@ class App {
 		});
 
 		Serial.onReceive.addListener(function(e) {
+			trace('yes');
 			if(e.connectionId != connectionId) return;
 			var data = new Uint8Array(e.data);
 			var final: String = '';
