@@ -29,11 +29,11 @@ class App {
 		portSelect = cast Browser.document.getElementById('portSelect');
 		outputDiv = cast Browser.document.getElementById('readout');
 
-		Browser.window.onunload = function() {
+		chrome.Runtime.onSuspend.addListener(function() {
 			Serial.disconnect(connectionId, function(e) {
 				trace('disconnected: ' + connectionId, e);
 			});
-		}
+		});
 
 		for(o in oldMessages) {
 			output(o);
@@ -55,7 +55,6 @@ class App {
 		});
 
 		Serial.onReceive.addListener(function(e) {
-			trace('yes');
 			if(e.connectionId != connectionId) return;
 			var data = new Uint8Array(e.data);
 			var final: String = '';
@@ -86,8 +85,11 @@ class App {
 				y = 0;
 			}
 
-			if(x != 0) {
+			if(x > 0) {
 				send('1');
+			}
+			else if(x < 0) {
+				send('-1');
 			}
 			else {
 				send('0');
@@ -155,11 +157,12 @@ class App {
 	function send(msg: String) {
 		if(connectionId == -1) return;
 		var byteArray: Array<Int> = [];
-		//byteArray.push(0);
+		byteArray.push('x'.charCodeAt(0));
 		for(i in 0...msg.length) {
 			byteArray.push(msg.charCodeAt(i));
 		}
 		byteArray.push('|'.charCodeAt(0));
+		trace(byteArray);
 		var dataBuffer: Uint8Array = new Uint8Array(byteArray);
 		Serial.send(connectionId, dataBuffer.buffer, function(e) {
 			//output('sent: ' + dataBuffer);
