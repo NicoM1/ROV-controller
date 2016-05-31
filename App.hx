@@ -85,15 +85,26 @@ class App {
 				y = 0;
 			}
 
-			if(x > 0) {
-				send('1');
+			var toSend: String = '';
+
+			toSend += Std.string(x) + ',';
+
+
+			var triggerRight = currentGamepad.buttons[7].value;
+			var triggerLeft = currentGamepad.buttons[6].value;
+
+			var triggerValue = triggerRight - triggerLeft;
+			triggerValue = Math.round(triggerValue * 100)/100;
+
+			if(Math.abs(triggerValue) < 0.1) triggerValue = 0;
+
+			toSend += Std.string(triggerValue);
+			if(triggerValue != 0) {
+				//output(triggerValue);
 			}
-			else if(x < 0) {
-				send('-1');
-			}
-			else {
-				send('0');
-			}
+
+			//output(toSend);
+			send(toSend);
 
 			if(currentGamepad.buttons[0].pressed) {
 				axesReadout.style.backgroundColor = "#aaaaaa";
@@ -130,12 +141,13 @@ class App {
 
 	static var oldMessages: Array<String> = [];
 
-	static function output(msg: String) {
+	static function output(msg: Dynamic) {
+		var msgString: String = Std.string(msg);
 		if(outputDiv == null) {
-			oldMessages.push(msg);
+			oldMessages.push(msgString);
 			return;
 		}
-		outputDiv.innerHTML = msg + '\n' + outputDiv.innerHTML;
+		outputDiv.innerHTML = msgString + '\n' + outputDiv.innerHTML;
 		if(outputDiv.innerHTML.length > 10000) {
 			outputDiv.innerHTML = outputDiv.innerHTML.substring(0, 10000);
 		}
@@ -150,7 +162,6 @@ class App {
 		comPort = port;
 		Serial.connect(port, function(info: ConnectionInfo) {
 			connectionId = info.connectionId;
-			send('test');
 		});
 	}
 
@@ -162,7 +173,6 @@ class App {
 			byteArray.push(msg.charCodeAt(i));
 		}
 		byteArray.push('|'.charCodeAt(0));
-		trace(byteArray);
 		var dataBuffer: Uint8Array = new Uint8Array(byteArray);
 		Serial.send(connectionId, dataBuffer.buffer, function(e) {
 			//output('sent: ' + dataBuffer);
