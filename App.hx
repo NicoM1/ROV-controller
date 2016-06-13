@@ -98,13 +98,13 @@ class App {
 
 			if(Math.abs(triggerValue) < 0.1) triggerValue = 0;
 
-			toSend += Std.string(triggerValue);
+			toSend += Std.string(triggerValue) + ',';
 			if(triggerValue != 0) {
 				//output(triggerValue);
 			}
 
 			//output(toSend);
-			send(toSend);
+
 
 			if(currentGamepad.buttons[0].pressed) {
 				axesReadout.style.backgroundColor = "#aaaaaa";
@@ -131,6 +131,10 @@ class App {
 				x = 0;
 				y = 0;
 			}
+
+			toSend += Std.string(y);
+			//output(toSend);
+			send(toSend);
 
 			var right: Float = 100 - x*30;
 			var top: Float = 100 + y*30;

@@ -1,6 +1,8 @@
-int pins[] = {2, 3, 8, 9, 10, 11, 12, 13};
+int pins[] = {3, 8, 2, 9, 10, 11, 12, 13};
 
 float motor1 = 0;
+float motor2 = 0;
+float motor3 = 0;
 
 void setup() {
   Serial.begin(9600);
@@ -28,10 +30,12 @@ void loop() {
     //Serial.print(data + "|");
     String xval = "";
     String yval = "";
+    String zval = "";
 
     int i = 0;
     while(true) {
       if(data.charAt(i) == ',') {
+        i++;
         break;
       }
       else {
@@ -39,17 +43,35 @@ void loop() {
       }
       i++;
     }
-    while(i < data.length() - 1) {
+    while(true) {
+       if(data.charAt(i) == ',') {
+        i++;
+        break;
+      }
+      else {
+        yval += data.charAt(i);
+      }
       i++;
-      yval += data.charAt(i);
+    }
+     while(i < data.length()) {
+      zval += data.charAt(i);
+      i++;
     }
 
     float x = xval.toFloat();
     float y = yval.toFloat();
+    float z = zval.toFloat();
 
     motor1 = x;
+    motor3 = -x;
+    motor2 = y;
 
-    Serial.print("recieved: " + xval + ", " + yval + "|");
+    if(z != 0) {
+      motor1 = z;
+      motor3 = z;
+    }
+
+    Serial.print("recieved: " + String(yval) +  ", " + String(zval) + "|");
     
     /*if(data.charAt(0) == '1') {
       for(int i = 0; i < 8; i++) {
@@ -65,21 +87,44 @@ void loop() {
     }*/
   }
 
-  if(motor1 != 0) {
-     timer0++;
-     Serial.print(String(timer0) + "|");
-  
-     if(timer0 > 10 - 10*motor1) {
-         digitalWrite(pins[0], HIGH);
-         timer0 = 0;
-     }
-     else {
-         digitalWrite(pins[0], LOW);
-     }
-   }
-   else {
-      digitalWrite(pins[0], LOW);
-   }
+  if (motor1 > 0.3) {
+    digitalWrite(pins[0], LOW);
+    digitalWrite(pins[1], HIGH);
+  }
+  else if (motor1 < -0.3) {
+    digitalWrite(pins[0], HIGH);
+    digitalWrite(pins[1], LOW);
+  }
+  else {
+    digitalWrite(pins[0], LOW);
+    digitalWrite(pins[1], LOW);
+  }
+
+  if (motor3 > 0.3) {
+    digitalWrite(pins[5], LOW);
+    digitalWrite(pins[6], HIGH);
+  }
+  else if (motor3 < -0.3) {
+    digitalWrite(pins[5], HIGH);
+    digitalWrite(pins[6], LOW);
+  }
+  else {
+    digitalWrite(pins[5], LOW);
+    digitalWrite(pins[6], LOW);
+  }
+
+  if(motor2 > 0) {
+    digitalWrite(pins[2], LOW);
+    digitalWrite(pins[3], HIGH);
+  }
+  else if(motor2 < 0) {
+    digitalWrite(pins[3], LOW);
+    digitalWrite(pins[2], HIGH);
+  }
+  else {
+    digitalWrite(pins[2], LOW);
+    digitalWrite(pins[3], LOW);
+  }
   //Serial.print("loop|");
   delay(5);
 }

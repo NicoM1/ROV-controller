@@ -75,10 +75,9 @@ var App = function() {
 		var triggerValue = triggerRight - triggerLeft;
 		triggerValue = Math.round(triggerValue * 100) / 100;
 		if(Math.abs(triggerValue) < 0.1) triggerValue = 0;
-		if(triggerValue == null) toSend += "null"; else toSend += "" + triggerValue;
+		toSend += (triggerValue == null?"null":"" + triggerValue) + ",";
 		if(triggerValue != 0) {
 		}
-		_g.send(toSend);
 		if(currentGamepad.buttons[0].pressed) _g.axesReadout.style.backgroundColor = "#aaaaaa"; else _g.axesReadout.style.backgroundColor = null;
 		if(currentGamepad.buttons[1].pressed) _g.rightAxesReadout.style.backgroundColor = "#aaaaaa"; else _g.rightAxesReadout.style.backgroundColor = null;
 		var left = 100 + x * 30;
@@ -91,6 +90,8 @@ var App = function() {
 			x = 0;
 			y = 0;
 		}
+		if(y == null) toSend += "null"; else toSend += "" + y;
+		_g.send(toSend);
 		var right = 100 - x * 30;
 		var top1 = 100 + y * 30;
 		_g.rightAxesReadout.style.right = right + "px";
@@ -120,7 +121,7 @@ App.prototype = {
 	connect: function(port) {
 		var _g = this;
 		if(this.connectionId != -1) chrome.serial.disconnect(this.connectionId,function(e) {
-			haxe_Log.trace("disconnected: " + (e == null?"null":"" + e),{ fileName : "App.hx", lineNumber : 159, className : "App", methodName : "connect"});
+			haxe_Log.trace("disconnected: " + (e == null?"null":"" + e),{ fileName : "App.hx", lineNumber : 163, className : "App", methodName : "connect"});
 		});
 		this.comPort = port;
 		chrome.serial.connect(port,null,function(info) {
@@ -148,7 +149,7 @@ App.prototype = {
 		this.webcamOutput.src = URL.createObjectURL(stream);
 	}
 	,videoError: function(e) {
-		haxe_Log.trace(e,{ fileName : "App.hx", lineNumber : 190, className : "App", methodName : "videoError"});
+		haxe_Log.trace(e,{ fileName : "App.hx", lineNumber : 194, className : "App", methodName : "videoError"});
 	}
 };
 var HxOverrides = function() { };
